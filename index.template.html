@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assistant Financement — Saint-Benoît</title>
+<style>
+  :root {
+    --fond: #FAFAF7;
+    --fond-carte: #FFFFFF;
+    --encre: #1C1E21;
+    --encre-douce: #5A6472;
+    --accent: #1B3A5C;
+    --accent-clair: #E8EEF3;
+    --bordure: #DDE1E6;
+    --erreur: #C0392B;
+    --erreur-clair: #FBEAE8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: "Source Sans Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--accent);
+    color: #FFFFFF;
+    padding: 1.5rem 1.5rem 1.25rem;
+  }
+
+  .entete-contenu {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: "Georgia", "Iowan Old Style", serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 0.3rem;
+  }
+
+  .sous-titre {
+    color: #C9D6E3;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  main {
+    flex: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 1.25rem 1.25rem 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .avertissement {
+    background: var(--accent-clair);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.85rem;
+    color: var(--encre-douce);
+    margin-bottom: 1rem;
+  }
+
+  .avertissement strong {
+    color: var(--encre);
+  }
+
+  #fil-conversation {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 1rem;
+    min-height: 200px;
+  }
+
+  .message {
+    margin-bottom: 1rem;
+    max-width: 90%;
+  }
+
+  .message.utilisateur {
+    margin-left: auto;
+  }
+
+  .bulle {
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+  }
+
+  .message.utilisateur .bulle {
+    background: var(--accent);
+    color: #FFFFFF;
+  }
+
+  .message.assistant .bulle {
+    background: var(--fond-carte);
+    border: 1px solid var(--bordure);
+  }
+
+  .message.assistant .bulle a {
+    color: var(--accent);
+  }
+
+  .message.erreur .bulle {
+    background: var(--erreur-clair);
+    border: 1px solid var(--erreur);
+    color: var(--erreur);
+  }
+
+  .indicateur-chargement {
+    display: inline-flex;
+    gap: 4px;
+    padding: 0.75rem 1rem;
+  }
+
+  .indicateur-chargement span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--encre-douce);
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+
+  .indicateur-chargement span:nth-child(2) { animation-delay: 0.2s; }
+  .indicateur-chargement span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
+  }
+
+  .zone-saisie {
+    display: flex;
+    gap: 0.6rem;
+    padding: 1rem 0 1.5rem;
+    border-top: 1px solid var(--bordure);
+  }
+
+  #champ-question {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: none;
+    background: var(--fond-carte);
+    color: var(--encre);
+  }
+
+  #champ-question:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  #bouton-envoyer {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 0 1.3rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #bouton-envoyer:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  #bouton-envoyer:not(:disabled):hover {
+    background: #15304c;
+  }
+
+  .exemples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .exemple-bouton {
+    background: var(--fond-carte);
+    border: 1px solid var(--bordure);
+    border-radius: 16px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+    color: var(--encre-douce);
+    cursor: pointer;
+  }
+
+  .exemple-bouton:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .indicateur-chargement span { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="entete-contenu">
+    <h1>Assistant Financement</h1>
+    <p class="sous-titre">Identifier les cofinancements mobilisables pour un projet — Mairie de Saint-Benoît</p>
+  </div>
+</header>
+
+<main>
+  <div class="avertissement">
+    <strong>Usage prévu :</strong> décrivez un projet ou une problématique de votre délégation
+    (ex. rénovation d'une infrastructure sportive). L'assistant identifie des pistes de cofinancement
+    local, national et européen, à transmettre ensuite aux services administratifs pour instruction.
+    Les informations sont à vérifier auprès des organismes cités avant toute démarche.
+  </div>
+
+  <div id="zone-exemples" class="exemples">
+    <button class="exemple-bouton" data-exemple="Je souhaite rénover les vestiaires du stade municipal, vétustes depuis plusieurs années. Quels cofinancements pourrais-je mobiliser ?">Rénovation d'infrastructure sportive</button>
+    <button class="exemple-bouton" data-exemple="Notre commune souhaite acheter du matériel pédagogique pour les écoles primaires. Quelles aides existent ?">Matériel pédagogique</button>
+    <button class="exemple-bouton" data-exemple="Je porte un projet de rénovation de voirie rurale dans les écarts. Quels dispositifs de cofinancement existent, y compris via la CIREST ?">Voirie rurale</button>
+  </div>
+
+  <div id="fil-conversation"></div>
+
+  <div class="zone-saisie">
+    <textarea id="champ-question" rows="2" placeholder="Décrivez votre projet ou votre problématique..."></textarea>
+    <button id="bouton-envoyer">Envoyer</button>
+  </div>
+</main>
+
+<script>
+  // URL de la fonction serverless Vercel. À adapter une fois le déploiement
+  // réel effectué (voir DEPLOIEMENT.md) — laissé en relatif ("/api/chat")
+  // car la page et la fonction serverless seront hébergées sur le même
+  // domaine Vercel.
+  const URL_API = "/api/chat";
+
+  const CADRAGE_SYSTEME = /* CADRAGE_SYSTEME_PLACEHOLDER */ "";
+
+  let historique = [];
+
+  const filConversation = document.getElementById("fil-conversation");
+  const champQuestion = document.getElementById("champ-question");
+  const boutonEnvoyer = document.getElementById("bouton-envoyer");
+  const zoneExemples = document.getElementById("zone-exemples");
+
+  function echapperHtml(texte) {
+    // Même logique que generer_html.py (VEILLE-FI) : échappement explicite
+    // couvrant aussi les guillemets, pas seulement < > & — voir l'historique
+    // de ce projet pour le contexte de cette correction.
+    return String(texte)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function convertirLiensMarkdown(texteEchappe) {
+    // Conversion simple des liens Markdown [texte](url) en vraies balises
+    // <a>, APRÈS échappement du texte brut — pour ne jamais réintroduire de
+    // HTML non échappé depuis le contenu généré par le modèle.
+    return texteEchappe.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      (correspondance, texteLien, url) => {
+        return `<a href="${url}" target="_blank" rel="noopener">${texteLien}</a>`;
+      },
+    );
+  }
+
+  function ajouterMessage(role, texte) {
+    const div = document.createElement("div");
+    div.className = `message ${role}`;
+    const bulle = document.createElement("div");
+    bulle.className = "bulle";
+    if (role === "assistant") {
+      bulle.innerHTML = convertirLiensMarkdown(echapperHtml(texte));
+    } else {
+      bulle.textContent = texte;
+    }
+    div.appendChild(bulle);
+    filConversation.appendChild(div);
+    filConversation.scrollTop = filConversation.scrollHeight;
+    return div;
+  }
+
+  function ajouterIndicateurChargement() {
+    const div = document.createElement("div");
+    div.className = "message assistant";
+    div.id = "indicateur-temporaire";
+    div.innerHTML = `<div class="bulle"><div class="indicateur-chargement"><span></span><span></span><span></span></div></div>`;
+    filConversation.appendChild(div);
+    filConversation.scrollTop = filConversation.scrollHeight;
+  }
+
+  function retirerIndicateurChargement() {
+    const indicateur = document.getElementById("indicateur-temporaire");
+    if (indicateur) indicateur.remove();
+  }
+
+  function extraireTexteReponse(donnees) {
+    // La réponse de l'API Anthropic peut contenir plusieurs blocs (texte,
+    // appels d'outils de recherche web, résultats d'outils) — voir
+    // ASSISTANT_FINANCEMENT.md pour le détail du format. On ne garde que
+    // les blocs de type "text" pour l'affichage, dans l'ordre où ils
+    // arrivent, en les concaténant.
+    if (!donnees || !Array.isArray(donnees.content)) return null;
+    const blocsTexte = donnees.content.filter((bloc) => bloc.type === "text");
+    if (blocsTexte.length === 0) return null;
+    return blocsTexte.map((bloc) => bloc.text).join("\n\n");
+  }
+
+  async function envoyerQuestion(texteQuestion) {
+    if (!texteQuestion.trim()) return;
+
+    zoneExemples.style.display = "none";
+    ajouterMessage("utilisateur", texteQuestion);
+    historique.push({ role: "user", content: texteQuestion });
+
+    champQuestion.value = "";
+    champQuestion.disabled = true;
+    boutonEnvoyer.disabled = true;
+    ajouterIndicateurChargement();
+
+    try {
+      const reponse = await fetch(URL_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: CADRAGE_SYSTEME,
+          messages: historique,
+        }),
+      });
+
+      const donnees = await reponse.json();
+      retirerIndicateurChargement();
+
+      if (!reponse.ok) {
+        const messageErreur = (donnees && donnees.erreur) || "Une erreur est survenue. Réessayez.";
+        ajouterMessage("erreur", messageErreur);
+        return;
+      }
+
+      const texteReponse = extraireTexteReponse(donnees);
+      if (!texteReponse) {
+        ajouterMessage("erreur", "Réponse vide ou inattendue du service. Réessayez votre question.");
+        return;
+      }
+
+      ajouterMessage("assistant", texteReponse);
+      historique.push({ role: "assistant", content: texteReponse });
+    } catch (erreurReseau) {
+      retirerIndicateurChargement();
+      ajouterMessage("erreur", "Impossible de contacter le service. Vérifiez votre connexion et réessayez.");
+      console.error(erreurReseau);
+    } finally {
+      champQuestion.disabled = false;
+      boutonEnvoyer.disabled = false;
+      champQuestion.focus();
+    }
+  }
+
+  boutonEnvoyer.addEventListener("click", () => envoyerQuestion(champQuestion.value));
+
+  champQuestion.addEventListener("keydown", (evenement) => {
+    if (evenement.key === "Enter" && !evenement.shiftKey) {
+      evenement.preventDefault();
+      envoyerQuestion(champQuestion.value);
+    }
+  });
+
+  document.querySelectorAll(".exemple-bouton").forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      envoyerQuestion(bouton.dataset.exemple);
+    });
+  });
+</script>
+
+</body>
+</html>
