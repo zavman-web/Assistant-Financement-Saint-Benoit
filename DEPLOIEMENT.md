@@ -17,12 +17,24 @@ celui-ci pour l'usage "analyse de projet par un élu".
 ```
 assistant-financement/
 ├── index.template.html      <- SOURCE du HTML (à éditer)
-├── index.html                <- GÉNÉRÉ par build.mjs (ne pas éditer à la main)
+├── index.html                <- GÉNÉRÉ par build.mjs — DOIT ÊTRE COMMITÉ malgré tout
 ├── build.mjs                  <- Script qui injecte CADRAGE_ASSISTANT.md dans index.html
 ├── CADRAGE_ASSISTANT.md       <- SOURCE DE VÉRITÉ du system prompt envoyé à Claude
 ├── api/
 │   └── chat.js                <- Fonction serverless Vercel (proxy sécurisé vers l'API Claude)
 └── test/
+```
+
+**ATTENTION (clarifié le 27/06/2026 suite à une confusion réelle survenue
+au premier déploiement)** : "généré par build.mjs" signifie qu'il ne faut
+JAMAIS éditer `index.html` à la main — éditer `index.template.html` puis
+relancer `node build.mjs`. Ça ne veut PAS dire que `index.html` doit être
+exclu de git ou ajouté au `.gitignore`, contrairement à un vrai artefact de
+build (`__pycache__`, `node_modules`). **`index.html` DOIT être committé et
+présent sur GitHub**, parce que ce projet n'a aucune étape de build
+configurée côté Vercel — Vercel sert `index.html` directement, tel qu'il se
+trouve dans le dépôt, sans jamais exécuter `build.mjs` lui-même. Si
+`index.html` est absent du dépôt, la page ne fonctionnera pas du tout.
     ├── test_api_chat.mjs       <- Tests de la fonction serverless (cas d'erreur)
     └── test_securite_interface.js  <- Tests XSS de l'interface (jsdom)
 ```

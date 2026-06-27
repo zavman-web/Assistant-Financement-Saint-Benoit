@@ -1,2 +1,15 @@
-# Artefact généré par build.mjs (source de vérité : CADRAGE_ASSISTANT.md + index.template.html)
-index.html
+# node_modules n'est utilisé que ponctuellement pour les tests locaux
+# (jsdom) — jamais nécessaire en production sur Vercel, qui gère ses propres
+# dépendances. Donc bien à exclure, contrairement à index.html (voir ci-dessous).
+node_modules/
+package.json
+package-lock.json
+
+# IMPORTANT : index.html n'est PAS exclu ici, volontairement.
+# Bien qu'il soit "généré" par build.mjs à partir de index.template.html,
+# c'est le fichier que Vercel sert réellement aux élus — il n'y a aucune
+# étape de build configurée côté Vercel pour le régénérer automatiquement.
+# Si index.html est absent du dépôt, la page ne fonctionne pas du tout.
+# Ne JAMAIS ajouter "index.html" ici, malgré la tentation de le traiter
+# comme un artefact de build classique (erreur réelle survenue le 27/06/2026
+# au premier déploiement — voir DEPLOIEMENT.md section Architecture).
