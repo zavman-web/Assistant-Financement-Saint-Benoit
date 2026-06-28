@@ -20,6 +20,7 @@ assistant-financement/
 ├── index.html                <- GÉNÉRÉ par build.mjs — DOIT ÊTRE COMMITÉ malgré tout
 ├── build.mjs                  <- Script qui injecte CADRAGE_ASSISTANT.md dans index.html
 ├── CADRAGE_ASSISTANT.md       <- SOURCE DE VÉRITÉ du system prompt envoyé à Claude
+├── vercel.json                <- Configuration de durée max pour api/chat.mjs (60s, voir section 7)
 ├── api/
 │   └── chat.mjs                <- Fonction serverless Vercel (proxy sécurisé vers l'API Claude)
 └── test/
@@ -186,7 +187,18 @@ Voir la discussion du 27/06/2026. Deux options, la plus simple étant :
 | Symptôme | Cause probable | Action |
 |---|---|---|
 | "Impossible de contacter le service" + `Failed to fetch` dans la console + **404 sur `/api/chat`** | **Erreur réelle rencontrée au premier déploiement (27/06/2026)** : le fichier était nommé `chat.js` (CommonJS par défaut sans `package.json`), alors qu'il utilise la syntaxe ES Modules (`export default async function`) — Vercel ne le construit pas correctement. | Le fichier doit être nommé `api/chat.mjs` (déjà corrigé dans ce projet). Si l'erreur revient après une modification, vérifier que l'extension `.mjs` est conservée. |
+| `SyntaxError: Unexpected token` dans la console + **504 sur `/api/chat`** | **Erreur réelle rencontrée juste après la correction du 404 (27/06/2026)** : la fonction dépasse la durée maximale par défaut (5 à 10 secondes selon le contexte) avant que Claude n'ait fini de répondre — normal pour une question avec recherche web, qui prend souvent 10 à 20 secondes. Vercel renvoie une page d'erreur HTML brute (pas du JSON), ce qui fait échouer le `JSON.parse()` côté navigateur. | Corrigé en ajoutant `vercel.json` avec `maxDuration: 60` pour `api/chat.mjs` — 60 secondes est la valeur maximale autorisée sur le plan Hobby (gratuit) depuis 2024, largement suffisante pour une conversation avec recherche web. Si le timeout persiste malgré ça, vérifier dans les logs Vercel le temps réel pris par l'appel Anthropic. |
 | "Service temporairement indisponible" | `ANTHROPIC_API_KEY` non configurée ou invalide sur Vercel | Vérifier Settings → Environment Variables, redéployer |
 | "Le service de réponse a rencontré une erreur" | Erreur côté API Anthropic (quota dépassé, modèle indisponible) | Vérifier les logs Vercel (`vercel logs`) et le tableau de bord platform.claude.com |
 | Aucune réponse, page bloquée sur l'indicateur de chargement | Erreur réseau ou timeout | Vérifier la console du navigateur (F12), vérifier les logs de la fonction sur Vercel |
 | Réponse étrange ou hors-sujet | Le modèle n'a pas bien suivi le cadrage | Revoir `CADRAGE_ASSISTANT.md`, relancer `node build.mjs`, redéployer |
+
+## 8. Note sur les conditions d'utilisation du plan gratuit (Hobby)
+
+Le plan Hobby de Vercel (utilisé pour ce projet) est officiellement réservé à
+un usage non-commercial et personnel selon ses conditions d'utilisation. Un
+usage interne par une mairie n'est pas une activité commerciale classique,
+mais ce n'est pas non plus explicitement couvert par cette définition — un
+point à garder en tête, sans être un blocage immédiat. Si ça devient un
+sujet (volume d'usage élevé, besoin de garanties contractuelles), envisager
+un passage au plan Pro (~20€/mois) qui lève cette ambiguïté explicitement.
