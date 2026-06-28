@@ -1,4 +1,4 @@
-import handler from '../api/chat.js';
+import handler from '../api/chat.mjs';
 
 // Petit polyfill minimal pour simuler une Request Web Standard, comme le
 // fait l'environnement Vercel réel.

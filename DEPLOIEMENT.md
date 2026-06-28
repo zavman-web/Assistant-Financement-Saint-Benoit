@@ -21,7 +21,7 @@ assistant-financement/
 ├── build.mjs                  <- Script qui injecte CADRAGE_ASSISTANT.md dans index.html
 ├── CADRAGE_ASSISTANT.md       <- SOURCE DE VÉRITÉ du system prompt envoyé à Claude
 ├── api/
-│   └── chat.js                <- Fonction serverless Vercel (proxy sécurisé vers l'API Claude)
+│   └── chat.mjs                <- Fonction serverless Vercel (proxy sécurisé vers l'API Claude)
 └── test/
 ```
 
@@ -43,7 +43,7 @@ trouve dans le dépôt, sans jamais exécuter `build.mjs` lui-même. Si
 1. L'élu ouvre `index.html` dans son navigateur (hébergé sur Vercel).
 2. Il tape sa question. Le JavaScript de la page envoie la question +
    l'historique de la conversation à `/api/chat` (la fonction serverless).
-3. `api/chat.js` lit la clé API Anthropic depuis une variable d'environnement
+3. `api/chat.mjs` lit la clé API Anthropic depuis une variable d'environnement
    (jamais visible côté navigateur), appelle l'API Claude avec le cadrage
    de `CADRAGE_ASSISTANT.md` en system prompt, et renvoie la réponse.
 4. La page affiche la réponse, en échappant correctement tout contenu pour
@@ -138,14 +138,14 @@ Voir la discussion du 27/06/2026. Deux options, la plus simple étant :
    nom de la mairie, générer une nouvelle clé API, et la remplacer dans
    Vercel (Settings → Environment Variables → modifier `ANTHROPIC_API_KEY`).
    Aucune ligne de code n'a besoin de changer dans les deux cas — c'est
-   précisément pour ça que la clé n'est jamais codée en dur dans `api/chat.js`.
+   précisément pour ça que la clé n'est jamais codée en dur dans `api/chat.mjs`.
 
 ---
 
 ## 5. Sécurité — points vérifiés
 
 - **Clé API jamais exposée côté navigateur** : uniquement lue côté serveur
-  (`api/chat.js`) depuis une variable d'environnement.
+  (`api/chat.mjs`) depuis une variable d'environnement.
 - **Échappement XSS testé avec un vrai DOM (jsdom)**, pas seulement une
   relecture de code — voir `test/test_securite_interface.js`. Deux types de
   vulnérabilité ont été spécifiquement testés (suite aux leçons apprises sur
@@ -169,7 +169,7 @@ Voir la discussion du 27/06/2026. Deux options, la plus simple étant :
   ces informations n'ont pas besoin d'être protégées), mais ça veut dire
   qu'un usage abusif (volontaire ou non) ferait grimper la facture API. Si
   ça devient un problème réel, ajouter une limite de débit (rate limiting)
-  dans `api/chat.js` serait la prochaine étape — pas fait dans cette V1 par
+  dans `api/chat.mjs` serait la prochaine étape — pas fait dans cette V1 par
   souci de simplicité, conformément au principe "ne pas construire une
   usine à gaz" acté le 27/06/2026.
 - **Pas de persistance de l'historique** : chaque rechargement de page perd
@@ -185,6 +185,7 @@ Voir la discussion du 27/06/2026. Deux options, la plus simple étant :
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
+| "Impossible de contacter le service" + `Failed to fetch` dans la console + **404 sur `/api/chat`** | **Erreur réelle rencontrée au premier déploiement (27/06/2026)** : le fichier était nommé `chat.js` (CommonJS par défaut sans `package.json`), alors qu'il utilise la syntaxe ES Modules (`export default async function`) — Vercel ne le construit pas correctement. | Le fichier doit être nommé `api/chat.mjs` (déjà corrigé dans ce projet). Si l'erreur revient après une modification, vérifier que l'extension `.mjs` est conservée. |
 | "Service temporairement indisponible" | `ANTHROPIC_API_KEY` non configurée ou invalide sur Vercel | Vérifier Settings → Environment Variables, redéployer |
 | "Le service de réponse a rencontré une erreur" | Erreur côté API Anthropic (quota dépassé, modèle indisponible) | Vérifier les logs Vercel (`vercel logs`) et le tableau de bord platform.claude.com |
 | Aucune réponse, page bloquée sur l'indicateur de chargement | Erreur réseau ou timeout | Vérifier la console du navigateur (F12), vérifier les logs de la fonction sur Vercel |
